@@ -1,6 +1,7 @@
 part of openidconnect;
 
 class OpenIdConnectAndroidiOS {
+
   static Future<String> authorizeInteractive({
     required BuildContext context,
     required String title,
@@ -8,36 +9,24 @@ class OpenIdConnectAndroidiOS {
     required String redirectUrl,
     required int popupWidth,
     required int popupHeight,
+    Function? cookiesCallback,
   }) async {
-    //Create the url
-
-    final result = await showDialog<String?>(
+    final cookieManager = CookieManager.WebviewCookieManager();
+    final result = await showDialog<String>(
       context: context,
-      barrierDismissible: false,
       builder: (dialogContext) {
-        return AlertDialog(
-          actions: [
-            IconButton(
-              onPressed: () => Navigator.pop(dialogContext, null),
-              icon: Icon(Icons.close),
-            ),
-          ],
-          content: Container(
-            width:
-                min(popupWidth.toDouble(), MediaQuery.of(context).size.width),
-            height:
-                min(popupHeight.toDouble(), MediaQuery.of(context).size.height),
-            child: flutterWebView.WebView(
-              javascriptMode: flutterWebView.JavascriptMode.unrestricted,
-              initialUrl: authorizationUrl,
-              onPageFinished: (url) {
-                if (url.startsWith(redirectUrl)) {
-                  Navigator.pop(dialogContext, url);
-                }
-              },
-            ),
-          ),
-          title: Text(title),
+        return flutterWebView.WebView(
+          javascriptMode: flutterWebView.JavascriptMode.unrestricted,
+          initialUrl: authorizationUrl,
+          onPageFinished: (url) async {
+            final cookies = await cookieManager.getCookies(url);
+            if (cookies.isNotEmpty) {
+              cookiesCallback?.call(cookies);
+            }
+            if (url.startsWith(redirectUrl)) {
+              Navigator.of(context, rootNavigator: true).pop(url);
+            }
+          },
         );
       },
     );

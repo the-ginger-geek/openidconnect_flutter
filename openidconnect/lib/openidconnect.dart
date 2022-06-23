@@ -15,6 +15,7 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:retry/retry.dart';
 import 'package:webview_flutter/webview_flutter.dart' as flutterWebView;
 import 'package:url_launcher/url_launcher.dart';
+import 'package:webview_cookie_manager/webview_cookie_manager.dart' as CookieManager;
 
 part './src/openidconnect_client.dart';
 part './src/android_ios.dart';
@@ -74,6 +75,7 @@ class OpenIdConnect {
     required BuildContext context,
     required String title,
     required InteractiveAuthorizationRequest request,
+    Function? cookiesCallback,
   }) async {
     late String? responseUrl;
 
@@ -90,6 +92,7 @@ class OpenIdConnect {
         redirectUrl: request.redirectUrl,
         popupHeight: request.popupHeight,
         popupWidth: request.popupWidth,
+        cookiesCallback: cookiesCallback,
       );
     } else if (kIsWeb) {
       final storage = FlutterSecureStorage();
@@ -126,7 +129,7 @@ class OpenIdConnect {
       );
     }
 
-    return await _completeCodeExchange(request: request, url: responseUrl);
+    return await _completeCodeExchange(request: request, url: responseUrl ?? '');
   }
 
   static Future<AuthorizationResponse> _completeCodeExchange({
