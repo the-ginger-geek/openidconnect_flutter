@@ -75,6 +75,8 @@ class OpenIdConnect {
     required BuildContext context,
     required String title,
     required InteractiveAuthorizationRequest request,
+    Color? appBarBackgroundColor,
+    Color? appBarForegroundColor,
     Function? cookiesCallback,
   }) async {
     late String? responseUrl;
@@ -92,6 +94,8 @@ class OpenIdConnect {
         redirectUrl: request.redirectUrl,
         popupHeight: request.popupHeight,
         popupWidth: request.popupWidth,
+        appBarBackgroundColor: appBarBackgroundColor,
+        appBarForegroundColor: appBarForegroundColor,
         cookiesCallback: cookiesCallback,
       );
     } else if (kIsWeb) {
