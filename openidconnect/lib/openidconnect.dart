@@ -92,8 +92,6 @@ class OpenIdConnect {
         title: title,
         authorizationUrl: uri.toString(),
         redirectUrl: request.redirectUrl,
-        popupHeight: request.popupHeight,
-        popupWidth: request.popupWidth,
         appBarBackgroundColor: appBarBackgroundColor,
         appBarForegroundColor: appBarForegroundColor,
         cookiesCallback: cookiesCallback,

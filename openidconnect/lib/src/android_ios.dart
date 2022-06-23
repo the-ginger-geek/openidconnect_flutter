@@ -6,8 +6,6 @@ class OpenIdConnectAndroidiOS {
     required String title,
     required String authorizationUrl,
     required String redirectUrl,
-    required int popupWidth,
-    required int popupHeight,
     Color? appBarBackgroundColor,
     Color? appBarForegroundColor,
     Function? cookiesCallback,
@@ -15,26 +13,55 @@ class OpenIdConnectAndroidiOS {
     final cookieManager = CookieManager.WebviewCookieManager();
     final result = await showDialog<String>(
       context: context,
+      useSafeArea: false,
       builder: (dialogContext) {
         return Column(
+          mainAxisAlignment: MainAxisAlignment.end,
           children: [
-            AppBar(
-              foregroundColor: appBarForegroundColor,
-              backgroundColor: appBarBackgroundColor,
-              actions: [
-                IconButton(
-                  icon: Icon(Icons.close),
-                  onPressed: () {
-                    Navigator.pop(context);
-                  },
+            Material(
+              color: Colors.transparent,
+              child: Container(
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                      child: SizedBox(
+                        width: MediaQuery.of(context).size.width * 0.6,
+                        height: 65,
+                        child: Center(
+                          child: Text(
+                            authorizationUrl,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              fontSize: 14.0,
+                              color: appBarForegroundColor,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                    IconButton(
+                      icon: Icon(Icons.close),
+                      color: appBarForegroundColor,
+                      onPressed: () {
+                        Navigator.pop(context);
+                      },
+                    ),
+                  ],
                 ),
-              ],
-              title: Text(authorizationUrl, overflow: TextOverflow.ellipsis),
-              centerTitle: true,
-              automaticallyImplyLeading: false,
+                decoration: BoxDecoration(
+                  color: appBarBackgroundColor,
+                  borderRadius: BorderRadius.only(
+                    topLeft: Radius.circular(15),
+                    topRight: Radius.circular(15),
+                  ),
+                ),
+              ),
             ),
             SizedBox(
-              height: MediaQuery.of(context).size.height - (Platform.isIOS ? 103 : 98),
+              height: MediaQuery.of(context).size.height - (Platform.isIOS ? 130 : 105),
               child: flutterWebView.WebView(
                 javascriptMode: flutterWebView.JavascriptMode.unrestricted,
                 initialUrl: authorizationUrl,
