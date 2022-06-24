@@ -60,7 +60,8 @@ class OpenIdConnectAndroidiOS {
                 ),
               ),
             ),
-            SizedBox(
+            Container(
+              color: Colors.white,
               height: MediaQuery.of(context).size.height - (Platform.isIOS ? 130 : 105),
               child: flutterWebView.WebView(
                 javascriptMode: flutterWebView.JavascriptMode.unrestricted,
