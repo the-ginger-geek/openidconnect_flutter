@@ -75,7 +75,10 @@ class OpenIdConnectAndroidiOS {
                   }
                 },
                 navigationDelegate: (flutterWebView.NavigationRequest request) {
-                  if (request.url.startsWith(redirectUrl)) {
+                  // Because of a bug on the flutter webview we have to use the navigateionDelegate
+                  // callback to catch the redirect URL for iOS and the onPageFinished callback
+                  // for android.
+                  if (request.url.startsWith(redirectUrl) && Platform.isIOS) {
                     Navigator.of(context, rootNavigator: true).pop(request.url);
                     return flutterWebView.NavigationDecision.prevent;
                   }
