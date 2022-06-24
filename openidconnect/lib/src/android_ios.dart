@@ -74,6 +74,14 @@ class OpenIdConnectAndroidiOS {
                     Navigator.of(context, rootNavigator: true).pop(url);
                   }
                 },
+                navigationDelegate: (flutterWebView.NavigationRequest request) {
+                  if (request.url.startsWith(redirectUrl)) {
+                    Navigator.of(context, rootNavigator: true).pop(request.url);
+                    return flutterWebView.NavigationDecision.prevent;
+                  }
+
+                  return flutterWebView.NavigationDecision.navigate;
+                },
               ),
             ),
           ],
