@@ -10,6 +10,7 @@ class OpenIdConfiguration {
   final String? revocationEndpoint;
   final String? registrationEndpoint;
   final String? mfaChallengeEndpoint;
+  final String? authorizationRegistrationEndpoint;
 
   final List<String> scopesSupported;
   final List<String> claimsSupported;
@@ -38,6 +39,7 @@ class OpenIdConfiguration {
     this.revocationEndpoint,
     this.registrationEndpoint,
     this.mfaChallengeEndpoint,
+    this.authorizationRegistrationEndpoint,
     required this.scopesSupported,
     required this.claimsSupported,
     this.grantTypesSupported,
@@ -54,7 +56,7 @@ class OpenIdConfiguration {
     required this.requestUriParameterSupported,
   });
 
-  factory OpenIdConfiguration.fromJson(Map<String, dynamic> json) =>
+  factory OpenIdConfiguration.fromJson(Map<String, dynamic> json, {bool isKeycloak: false}) =>
       OpenIdConfiguration(
         document: json,
         issuer: json["issuer"].toString(),
@@ -66,6 +68,10 @@ class OpenIdConfiguration {
         revocationEndpoint: json["revocation_endpoint"]?.toString(),
         registrationEndpoint: json["registration_endpoint"]?.toString(),
         mfaChallengeEndpoint: json["mfa_challenge_endpoint"]?.toString(),
+        authorizationRegistrationEndpoint: isKeycloak
+            ? json["authorization_endpoint"].toString().replaceFirst(
+                'openid-connect/auth', 'openid-connect/registrations')
+            : null,
         deviceAuthorizationEndpoint:
             json["device_authorization_endpoint"]?.toString(),
         scopesSupported:

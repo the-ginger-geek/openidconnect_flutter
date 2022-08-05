@@ -46,7 +46,7 @@ class OpenIdConnect {
   static const CODE_CHALLENGE_STORAGE_KEY = "openidconnect_code_challenge";
 
   static Future<OpenIdConfiguration> getConfiguration(
-      String discoveryDocumentUri) async {
+      String discoveryDocumentUri, {bool isKeycloak: false}) async {
     final response =
         await httpRetry(() => http.get(Uri.parse(discoveryDocumentUri)));
     if (response == null) {
@@ -54,7 +54,7 @@ class OpenIdConnect {
           "The discovery document could not be found at: ${discoveryDocumentUri}");
     }
 
-    return OpenIdConfiguration.fromJson(response);
+    return OpenIdConfiguration.fromJson(response, isKeycloak: isKeycloak);
   }
 
   static Future<AuthorizationResponse> authorizePassword(
@@ -78,10 +78,14 @@ class OpenIdConnect {
     Color? appBarBackgroundColor,
     Color? appBarForegroundColor,
     Function? cookiesCallback,
+    bool registration: false,
   }) async {
     late String? responseUrl;
 
-    final uri = Uri.parse(request.configuration.authorizationEndpoint).replace(
+    final uri = Uri.parse(registration
+        ? request.configuration.authorizationRegistrationEndpoint ?? request.configuration.authorizationEndpoint
+        : request.configuration.authorizationEndpoint
+    ).replace(
       queryParameters: request.toMap(),
     );
 
