@@ -99,6 +99,7 @@ class OpenIdConnect {
         appBarBackgroundColor: appBarBackgroundColor,
         appBarForegroundColor: appBarForegroundColor,
         cookiesCallback: cookiesCallback,
+        hideWebView: request.additionalParameters?['prompt'] == 'none'
       );
     } else if (kIsWeb) {
       final storage = FlutterSecureStorage();
