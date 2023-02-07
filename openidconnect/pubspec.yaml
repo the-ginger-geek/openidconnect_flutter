@@ -17,6 +17,7 @@ dependencies:
   # openidconnect_windows: ^0.0.6
   flutter_secure_storage: ^6.0.0
   jwt_decoder: ^2.0.1
+  webview_cookie_manager: ^2.0.6
 
   cryptography: ^2.0.5
 
