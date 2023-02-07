@@ -1,3 +1,16 @@
+# [1.0.25] - November 16th, 2022
+
+- Revert platform indicator as it was causing problems with windows
+
+# [1.0.24] - November 10th, 2022
+
+- Update example dependencies
+
+# [1.0.23] - November 10th, 2022
+
+- Update dependencies
+- Explictly tell pub.dev that this library supports all platforms.
+
 # [1.0.21] - December 10, 2021
 
 - Update to Dart 2.15
