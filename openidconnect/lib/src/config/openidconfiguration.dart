@@ -12,8 +12,8 @@ class OpenIdConfiguration {
   final String? mfaChallengeEndpoint;
   final String? authorizationRegistrationEndpoint;
 
-  final List<String> scopesSupported;
-  final List<String> claimsSupported;
+  final List<String>? scopesSupported;
+  final List<String>? claimsSupported;
   final List<String>? grantTypesSupported;
   final List<String> responseTypesSupported;
   final List<String> responseModesSupported;
@@ -74,10 +74,12 @@ class OpenIdConfiguration {
             : null,
         deviceAuthorizationEndpoint:
             json["device_authorization_endpoint"]?.toString(),
-        scopesSupported:
-            List<String>.from(json["scopes_supported"] as List<dynamic>),
-        claimsSupported:
-            List<String>.from(json["claims_supported"] as List<dynamic>),
+        scopesSupported: json["scopes_supported"] == null
+            ? null
+            : List<String>.from(json["scopes_supported"] as List<dynamic>),
+        claimsSupported: json["claims_supported"] == null
+            ? null
+            : List<String>.from(json["claims_supported"] as List<dynamic>),
         grantTypesSupported: json["grant_types_supported"] == null
             ? null
             : List<String>.from(json["grant_types_supported"] as List<dynamic>),

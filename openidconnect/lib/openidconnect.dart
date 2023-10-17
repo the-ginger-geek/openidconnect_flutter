@@ -30,10 +30,12 @@ part 'src/models/requests/interactive_authorization_request.dart';
 part 'src/models/requests/password_authorization_request.dart';
 part 'src/models/requests/refresh_request.dart';
 part 'src/models/requests/logout_request.dart';
+part 'src/models/requests/logout_token_request.dart';
 part 'src/models/requests/revoke_token_request.dart';
 part 'src/models/requests/device_authorization_request.dart';
 part 'src/models/requests/user_info_request.dart';
 part 'src/models/requests/token_request.dart';
+part 'src/models/requests/user_registration_request.dart';
 
 part 'src/models/responses/token_response.dart';
 part 'src/models/responses/device_code_response.dart';
@@ -82,11 +84,15 @@ class OpenIdConnect {
   }) async {
     late String? responseUrl;
 
-    final uri = Uri.parse(registration
+    final authEndpoint = Uri.parse(registration
         ? request.configuration.authorizationRegistrationEndpoint ?? request.configuration.authorizationEndpoint
         : request.configuration.authorizationEndpoint
-    ).replace(
-      queryParameters: request.toMap(),
+    );
+    final uri = authEndpoint.replace(
+      queryParameters: <String, String>{
+        ...authEndpoint.queryParameters,
+        ...request.toMap(),
+      },
     );
 
     //These are special cases for the various different platforms because of limitations in pubspec.yaml
@@ -167,12 +173,9 @@ class OpenIdConnect {
       "grant_type": "authorization_code",
       "code_verifier": request.codeVerifier,
       "code": authCode,
+      if (request.clientSecret != null) "client_secret": request.clientSecret!,
+      if (state != null && state.isNotEmpty) "state": state
     };
-
-    if (request.clientSecret != null)
-      body.addAll({"client_secret": request.clientSecret!});
-
-    if (state != null && state.isNotEmpty) body.addAll({"state": state});
 
     final response = await httpRetry(
       () => http.post(
@@ -200,26 +203,24 @@ class OpenIdConnect {
 
     final codeResponse = DeviceCodeResponse.fromJson(response);
 
-    await launch(
-      Uri.parse(codeResponse.verificationUrlComplete)
-          .replace(
-            queryParameters:
-                // ignore: unnecessary_cast
-                {"user_code": codeResponse.userCode} as Map<String, dynamic>,
-          )
-          .toString(),
-      enableJavaScript: true,
+    await launchUrl(
+      Uri.parse(codeResponse.verificationUrlComplete).replace(
+        queryParameters: <String, String>{
+          "user_code": codeResponse.userCode,
+        },
+      ),
+      webViewConfiguration: WebViewConfiguration(
+        enableJavaScript: true,
+      ),
     );
 
     final pollingUri = Uri.parse(request.configuration.tokenEndpoint);
-    var pollingBody = {
+    var pollingBody = <String, String>{
       "grant_type": "urn:ietf:params:oauth:grant-type:device_code",
       "device_code": codeResponse.deviceCode,
       "client_id": request.clientId,
+      if (request.clientSecret != null) "client_secret": request.clientSecret!,
     };
-
-    if (request.clientSecret != null)
-      pollingBody = {"client_secret": request.clientSecret!, ...pollingBody};
 
     late AuthorizationResponse authorizationResponse;
 
@@ -278,6 +279,21 @@ class OpenIdConnect {
     try {
       await httpRetry(
         () => http.get(url),
+      );
+    } on HttpResponseException catch (e) {
+      throw LogoutException(e.toString());
+    }
+  }
+
+  /// Keycloak compatible logout
+  /// see https://www.keycloak.org/docs/latest/securing_apps/#logout-endpoint
+  static Future<void> logoutToken({required LogoutTokenRequest request}) async {
+    if (request.configuration.endSessionEndpoint == null) return;
+
+    final url = Uri.parse(request.configuration.endSessionEndpoint!);
+    try {
+      await httpRetry(
+            () => http.post(url, body: request.toMap()),
       );
     } on HttpResponseException catch (e) {
       throw LogoutException(e.toString());
@@ -356,6 +372,24 @@ class OpenIdConnect {
       if (response == null) throw UserInfoException(ERROR_INVALID_RESPONSE);
 
       return response;
+    } on Exception catch (e) {
+      throw UserInfoException(e.toString());
+    }
+  }
+
+  static Future<void> registerUser(
+      {required UserRegistrationRequest request}) async {
+    try {
+      final response = await httpRetry(
+        () => http.get(
+          Uri.parse(request.configuration.registrationEndpoint!),
+          headers: {
+            "Authorization": "${request.tokenType} ${request.accessToken}"
+          },
+        ),
+      );
+
+      if (response == null) throw UserInfoException(ERROR_INVALID_RESPONSE);
     } on Exception catch (e) {
       throw UserInfoException(e.toString());
     }
