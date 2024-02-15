@@ -56,7 +56,7 @@ class OpenIdConfiguration {
     required this.requestUriParameterSupported,
   });
 
-  factory OpenIdConfiguration.fromJson(Map<String, dynamic> json, {bool isKeycloak: false}) =>
+  factory OpenIdConfiguration.fromJson(Map<String, dynamic> json, {bool isKeycloak = false}) =>
       OpenIdConfiguration(
         document: json,
         issuer: json["issuer"].toString(),
