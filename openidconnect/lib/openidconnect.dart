@@ -48,7 +48,7 @@ class OpenIdConnect {
   static const CODE_CHALLENGE_STORAGE_KEY = "openidconnect_code_challenge";
 
   static Future<OpenIdConfiguration> getConfiguration(
-      String discoveryDocumentUri, {bool isKeycloak: false}) async {
+      String discoveryDocumentUri, {bool isKeycloak = false}) async {
     final response =
         await httpRetry(() => http.get(Uri.parse(discoveryDocumentUri)));
     if (response == null) {
@@ -80,7 +80,7 @@ class OpenIdConnect {
     Color? appBarBackgroundColor,
     Color? appBarForegroundColor,
     Function? cookiesCallback,
-    bool registration: false,
+    bool registration = false,
   }) async {
     late String? responseUrl;
 
@@ -142,7 +142,7 @@ class OpenIdConnect {
       );
     }
 
-    return await _completeCodeExchange(request: request, url: responseUrl ?? '');
+    return await _completeCodeExchange(request: request, url: responseUrl);
   }
 
   static Future<AuthorizationResponse> _completeCodeExchange({
@@ -293,7 +293,7 @@ class OpenIdConnect {
     final url = Uri.parse(request.configuration.endSessionEndpoint!);
     try {
       await httpRetry(
-            () => http.post(url, body: request.toMap()),
+        () => http.post(url, body: request.toMap()),
       );
     } on HttpResponseException catch (e) {
       throw LogoutException(e.toString());
