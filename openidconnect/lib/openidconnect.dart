@@ -82,7 +82,7 @@ class OpenIdConnect {
     Function? cookiesCallback,
     bool registration = false,
   }) async {
-    late String? responseUrl;
+    String? responseUrl;
 
     final authEndpoint = Uri.parse(registration
         ? request.configuration.authorizationRegistrationEndpoint ?? request.configuration.authorizationEndpoint

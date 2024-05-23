@@ -11,40 +11,12 @@ class OpenIdConnectAndroidiOS {
     Function? cookiesCallback,
     bool hideWebView = false,
   }) async {
-    final cookieManager = CookieManager.WebviewCookieManager();
-    final controller = flutterWebView.WebViewController()
-      ..setJavaScriptMode(flutterWebView.JavaScriptMode.unrestricted)
-      ..setBackgroundColor(const Color(0x00000000))
-      ..setNavigationDelegate(
-        flutterWebView.NavigationDelegate(
-          onPageFinished: (String url) async {
-            final cookies = await cookieManager.getCookies(url);
-            if (cookies.isNotEmpty) {
-              cookiesCallback?.call(cookies);
-            }
-            if (url.startsWith(redirectUrl)) {
-              Navigator.of(context, rootNavigator: true).pop(url);
-            }
-          },
-          onNavigationRequest: (flutterWebView.NavigationRequest request) {
-            // Because of a bug on the flutter webview we have to use the navigateionDelegate
-            // callback to catch the redirect URL for iOS and the onPageFinished callback
-            // for android.
-            if (request.url.startsWith(redirectUrl) && Platform.isIOS) {
-              Navigator.of(context, rootNavigator: true).pop(request.url);
-              return flutterWebView.NavigationDecision.prevent;
-            }
-
-            return flutterWebView.NavigationDecision.navigate;
-          },
-        ),
-      )..loadRequest(Uri.parse(authorizationUrl));
-
     final result = await showDialog<String>(
       context: context,
       useSafeArea: false,
       barrierDismissible: true,
-      barrierColor: hideWebView ? Colors.transparent : Colors.black.withOpacity(0.3),
+      barrierColor:
+          hideWebView ? Colors.transparent : Colors.black.withOpacity(0.3),
       builder: (dialogContext) {
         return Visibility(
           visible: !hideWebView,
@@ -100,8 +72,16 @@ class OpenIdConnectAndroidiOS {
               ),
               Container(
                 color: Colors.white,
-                height: MediaQuery.of(context).size.height - (Platform.isIOS ? 130 : 105),
-                child: flutterWebView.WebViewWidget(controller: controller),
+                height: MediaQuery.of(context).size.height -
+                    (Platform.isIOS ? 130 : 105),
+                child: flutterWebView.WebViewWidget(
+                  controller: _webViewController(
+                    cookiesCallback,
+                    redirectUrl,
+                    context,
+                    authorizationUrl,
+                  ),
+                ),
               ),
             ],
           ),
@@ -112,5 +92,42 @@ class OpenIdConnectAndroidiOS {
     if (result == null) throw AuthenticationException(ERROR_USER_CLOSED);
 
     return result;
+  }
+
+  static flutterWebView.WebViewController _webViewController(
+      Function? cookiesCallback,
+      String redirectUrl,
+      BuildContext context,
+      String authorizationUrl) {
+    return flutterWebView.WebViewController()
+      ..setJavaScriptMode(flutterWebView.JavaScriptMode.unrestricted)
+      ..setBackgroundColor(const Color(0x00000000))
+      ..setNavigationDelegate(
+        // Because of a bug on the flutter WebView we have to use the navigationDelegate
+        // callback to catch the redirect URL for iOS and the onPageFinished callback
+        // for android.
+        flutterWebView.NavigationDelegate(
+          onPageFinished: (String url) async {
+            final cookies =
+                await CookieManager.WebviewCookieManager().getCookies(url);
+            if (cookies.isNotEmpty) {
+              cookiesCallback?.call(cookies);
+            }
+
+            if (Platform.isAndroid && url.startsWith(redirectUrl)) {
+              Navigator.of(context, rootNavigator: true).pop(url);
+            }
+          },
+          onNavigationRequest: (flutterWebView.NavigationRequest request) {
+            if (request.url.startsWith(redirectUrl) && Platform.isIOS) {
+              Navigator.of(context, rootNavigator: true).pop(request.url);
+              return flutterWebView.NavigationDecision.prevent;
+            }
+
+            return flutterWebView.NavigationDecision.navigate;
+          },
+        ),
+      )
+      ..loadRequest(Uri.parse(authorizationUrl));
   }
 }
