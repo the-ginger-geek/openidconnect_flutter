@@ -115,12 +115,16 @@ class OpenIdConnectAndroidiOS {
             }
 
             if (Platform.isAndroid && url.startsWith(redirectUrl)) {
-              Navigator.of(context, rootNavigator: true).pop(url);
+              if (context.mounted) {
+                Navigator.of(context, rootNavigator: true).pop(url);
+              }
             }
           },
           onNavigationRequest: (flutterWebView.NavigationRequest request) {
             if (request.url.startsWith(redirectUrl) && Platform.isIOS) {
-              Navigator.of(context, rootNavigator: true).pop(request.url);
+              if (context.mounted) {
+                Navigator.of(context, rootNavigator: true).pop(request.url);
+              }
               return flutterWebView.NavigationDecision.prevent;
             }
 
