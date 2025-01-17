@@ -26,7 +26,7 @@ dependencies:
   retry: ^3.1.2
 
   # TODO Remove these once native implementations can be added. Refactor so that the native implementations don't need to do the full cycle through.
-  webview_flutter: ^4.5.0
+  webview_flutter: ^4.10.0
 
 dev_dependencies:
   flutter_lints: ^3.0.1
