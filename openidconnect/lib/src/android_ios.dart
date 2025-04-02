@@ -11,127 +11,120 @@ class OpenIdConnectAndroidiOS {
     Function? cookiesCallback,
     bool hideWebView = false,
   }) async {
-    final result = await showDialog<String>(
+    final result = await showModalBottomSheet<String>(
       context: context,
-      useSafeArea: false,
-      barrierDismissible: true,
-      barrierColor:
-          hideWebView ? Colors.transparent : Colors.black.withOpacity(0.3),
-      builder: (dialogContext) {
-        return Visibility(
-          visible: !hideWebView,
-          maintainState: true,
-          maintainSize: true,
-          maintainAnimation: true,
-          maintainInteractivity: true,
-          maintainSemantics: true,
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.end,
-            children: [
-              Material(
-                color: Colors.transparent,
-                child: Container(
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: [
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                        child: SizedBox(
-                          width: MediaQuery.of(context).size.width * 0.6,
-                          height: 65,
-                          child: Center(
-                            child: Text(
-                              authorizationUrl,
-                              overflow: TextOverflow.ellipsis,
-                              style: TextStyle(
-                                fontSize: 14.0,
-                                color: appBarForegroundColor,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                      IconButton(
-                        icon: Icon(Icons.close),
-                        color: appBarForegroundColor,
-                        onPressed: () {
-                          Navigator.pop(context);
-                        },
-                      ),
-                    ],
-                  ),
-                  decoration: BoxDecoration(
-                    color: appBarBackgroundColor,
-                    borderRadius: BorderRadius.only(
-                      topLeft: Radius.circular(15),
-                      topRight: Radius.circular(15),
-                    ),
-                  ),
-                ),
-              ),
-              Container(
-                color: Colors.white,
-                height: MediaQuery.of(context).size.height -
-                    (Platform.isIOS ? 130 : 105),
-                child: flutterWebView.WebViewWidget(
-                  controller: _webViewController(
-                    cookiesCallback,
-                    redirectUrl,
-                    context,
-                    authorizationUrl,
-                  ),
-                ),
-              ),
-            ],
-          ),
+      isScrollControlled: true,
+      isDismissible: true,
+      barrierColor: hideWebView ? Colors.transparent : null,
+      backgroundColor: Colors.transparent, // Transparent for rounded corners
+      builder: (BuildContext context) {
+        return OpenIdConnectOverlay(
+          title: title,
+          authorizationUrl: authorizationUrl,
+          redirectUrl: redirectUrl,
+          appBarBackgroundColor: appBarBackgroundColor,
+          appBarForegroundColor: appBarForegroundColor,
+          cookiesCallback: cookiesCallback,
+          hideWebView: hideWebView,
         );
       },
     );
 
     if (result == null) throw AuthenticationException(ERROR_USER_CLOSED);
-
     return result;
   }
+}
 
-  static flutterWebView.WebViewController _webViewController(
-      Function? cookiesCallback,
-      String redirectUrl,
-      BuildContext context,
-      String authorizationUrl) {
-    return flutterWebView.WebViewController()
+class OpenIdConnectOverlay extends StatefulWidget {
+  final String title;
+  final String authorizationUrl;
+  final String redirectUrl;
+  final Color? appBarBackgroundColor;
+  final Color? appBarForegroundColor;
+  final Function? cookiesCallback;
+  final bool hideWebView;
+
+  const OpenIdConnectOverlay({
+    Key? key,
+    required this.title,
+    required this.authorizationUrl,
+    required this.redirectUrl,
+    this.appBarBackgroundColor,
+    this.appBarForegroundColor,
+    this.cookiesCallback,
+    this.hideWebView = false,
+  }) : super(key: key);
+
+  @override
+  _OpenIdConnectOverlayState createState() => _OpenIdConnectOverlayState();
+}
+
+class _OpenIdConnectOverlayState extends State<OpenIdConnectOverlay> {
+  late flutterWebView.WebViewController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = flutterWebView.WebViewController()
       ..setJavaScriptMode(flutterWebView.JavaScriptMode.unrestricted)
       ..setBackgroundColor(const Color(0x00000000))
       ..setNavigationDelegate(
-        // Because of a bug on the flutter WebView we have to use the navigationDelegate
-        // callback to catch the redirect URL for iOS and the onPageFinished callback
-        // for android.
         flutterWebView.NavigationDelegate(
           onPageFinished: (String url) async {
-            final cookies =
-                await CookieManager.WebviewCookieManager().getCookies(url);
+            final cookies = await CookieManager.WebviewCookieManager().getCookies(url);
             if (cookies.isNotEmpty) {
-              cookiesCallback?.call(cookies);
+              widget.cookiesCallback?.call(cookies);
             }
 
-            if (Platform.isAndroid && url.startsWith(redirectUrl)) {
-              if (context.mounted) {
-                Navigator.of(context, rootNavigator: true).pop(url);
+            if (url.startsWith(widget.redirectUrl)) {
+              if (mounted) {
+                Navigator.of(context).pop(url); // Return result and close overlay
               }
             }
           },
           onNavigationRequest: (flutterWebView.NavigationRequest request) {
-            if (request.url.startsWith(redirectUrl) && Platform.isIOS) {
-              if (context.mounted) {
-                Navigator.of(context, rootNavigator: true).pop(request.url);
+            if (request.url.startsWith(widget.redirectUrl)) {
+              if (mounted) {
+                Navigator.of(context).pop(request.url); // Return result
               }
               return flutterWebView.NavigationDecision.prevent;
             }
-
             return flutterWebView.NavigationDecision.navigate;
           },
         ),
       )
-      ..loadRequest(Uri.parse(authorizationUrl));
+      ..loadRequest(Uri.parse(widget.authorizationUrl));
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Visibility(
+      visible: !widget.hideWebView,
+      child: FractionallySizedBox(
+        heightFactor: 0.9, // 90% of screen height
+        child: ClipRRect(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(15)), // Rounded top corners
+          child: Scaffold(
+            appBar: AppBar(
+              backgroundColor: widget.appBarBackgroundColor ?? Colors.white,
+              foregroundColor: widget.appBarForegroundColor ?? Colors.black,
+              automaticallyImplyLeading: false, // No back button
+              title: Text(
+                widget.authorizationUrl,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(fontSize: 14),
+              ),
+              actions: [
+                IconButton(
+                  icon: Icon(Icons.close, color: Colors.black),
+                  onPressed: () => Navigator.of(context).pop(), // Close overlay
+                ),
+              ],
+            ),
+            body: flutterWebView.WebViewWidget(controller: _controller),
+          ),
+        ),
+      ),
+    );
   }
 }
