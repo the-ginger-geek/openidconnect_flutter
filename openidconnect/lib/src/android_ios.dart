@@ -60,17 +60,43 @@ class OpenIdConnectOverlay extends StatefulWidget {
 }
 
 class _OpenIdConnectOverlayState extends State<OpenIdConnectOverlay> {
-  late flutterWebView.WebViewController _controller;
+  flutterWebView.WebViewController? _controller;
+  bool _isLoading = true;
+  bool _hasError = false;
 
   @override
   void initState() {
     super.initState();
+    _initializeWebView();
+  }
+
+  @override
+  void dispose() {
+    // Clear controller reference when disposed
+    _controller = null;
+    super.dispose();
+  }
+
+  void _initializeWebView() {
     _controller = flutterWebView.WebViewController()
       ..setJavaScriptMode(flutterWebView.JavaScriptMode.unrestricted)
       ..setBackgroundColor(const Color(0x00000000))
       ..setNavigationDelegate(
         flutterWebView.NavigationDelegate(
+          onPageStarted: (String url) {
+            if (mounted) {
+              setState(() {
+                _isLoading = true;
+              });
+            }
+          },
           onPageFinished: (String url) async {
+            if (mounted) {
+              setState(() {
+                _isLoading = false;
+              });
+            }
+
             final cookies = await CookieManager.WebviewCookieManager().getCookies(url);
             if (cookies.isNotEmpty) {
               widget.cookiesCallback?.call(cookies);
@@ -80,6 +106,14 @@ class _OpenIdConnectOverlayState extends State<OpenIdConnectOverlay> {
               if (mounted) {
                 Navigator.of(context).pop(url); // Return result and close overlay
               }
+            }
+          },
+          onWebResourceError: (flutterWebView.WebResourceError error) {
+            if (mounted) {
+              setState(() {
+                _hasError = true;
+                _isLoading = false;
+              });
             }
           },
           onNavigationRequest: (flutterWebView.NavigationRequest request) {
@@ -115,13 +149,62 @@ class _OpenIdConnectOverlayState extends State<OpenIdConnectOverlay> {
                 style: TextStyle(fontSize: 14),
               ),
               actions: [
+                if (_hasError)
+                  IconButton(
+                    icon: Icon(Icons.refresh, color: Colors.black),
+                    onPressed: () {
+                      if (_controller != null) {
+                        setState(() {
+                          _hasError = false;
+                          _isLoading = true;
+                        });
+                        _controller!.reload();
+                      }
+                    },
+                  ),
                 IconButton(
                   icon: Icon(Icons.close, color: Colors.black),
                   onPressed: () => Navigator.of(context).pop(), // Close overlay
                 ),
               ],
             ),
-            body: flutterWebView.WebViewWidget(controller: _controller),
+            body: Stack(
+              children: [
+                if (_controller != null)
+                  flutterWebView.WebViewWidget(controller: _controller!),
+                if (_isLoading)
+                  Center(
+                    child: CircularProgressIndicator(),
+                  ),
+                if (_hasError)
+                  Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.error_outline, size: 48, color: Colors.black),
+                        SizedBox(height: 16),
+                        Text(
+                          "An error occurred while loading the page.",
+                          style: TextStyle(fontSize: 16),
+                        ),
+                        SizedBox(height: 16),
+                        ElevatedButton(
+                          onPressed: () {
+                            if (_controller != null) {
+                              setState(() {
+                                _hasError = false;
+                                _isLoading = true;
+                              });
+                              _controller!.reload();
+                            }
+                          },
+                          child: Text("Retry"),
+                        )
+                      ],
+                    ),
+                  )
+              ],
+            ),
           ),
         ),
       ),
