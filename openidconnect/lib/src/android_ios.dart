@@ -63,6 +63,7 @@ class _OpenIdConnectOverlayState extends State<OpenIdConnectOverlay> {
   flutterWebView.WebViewController? _controller;
   bool _isLoading = true;
   bool _hasError = false;
+  bool _hasPopped = false;
 
   @override
   void initState() {
@@ -103,7 +104,8 @@ class _OpenIdConnectOverlayState extends State<OpenIdConnectOverlay> {
             }
 
             if (url.startsWith(widget.redirectUrl)) {
-              if (mounted) {
+              if (mounted && !_hasPopped) {
+                _hasPopped = true;
                 Navigator.of(context).pop(url); // Return result and close overlay
               }
             }
@@ -118,7 +120,8 @@ class _OpenIdConnectOverlayState extends State<OpenIdConnectOverlay> {
           },
           onNavigationRequest: (flutterWebView.NavigationRequest request) {
             if (request.url.startsWith(widget.redirectUrl)) {
-              if (mounted) {
+              if (mounted && !_hasPopped) {
+                _hasPopped = true;
                 Navigator.of(context).pop(request.url); // Return result
               }
               return flutterWebView.NavigationDecision.prevent;
