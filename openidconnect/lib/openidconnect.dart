@@ -19,7 +19,7 @@ import 'package:webview_cookie_manager/webview_cookie_manager.dart' as CookieMan
 
 part './src/openidconnect_client.dart';
 part './src/android_ios.dart';
-part './src/helpers.dart';
+part './src/retry_helper.dart';
 
 part './src/models/identity.dart';
 part './src/models/event.dart';
