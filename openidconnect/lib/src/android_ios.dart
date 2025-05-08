@@ -17,6 +17,7 @@ class OpenIdConnectAndroidiOS {
       isDismissible: true,
       barrierColor: hideWebView ? Colors.transparent : null,
       backgroundColor: Colors.transparent, // Transparent for rounded corners
+      enableDrag: false,
       builder: (BuildContext context) {
         return OpenIdConnectOverlay(
           title: title,
